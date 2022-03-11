@@ -1,0 +1,41 @@
+# Buildspec Reference Doc: https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
+
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+       python: 3.8
+      # - pipenv check (if pipenv is installed and a Pipfile is in place)
+      # - Alternatively: https://www.owasp.org/index.php/OWASP_Dependency_Check
+  pre_build:
+    commands:
+      - echo check if AWS CLI installed...
+      - aws --version
+      - echo check if python3 installed...
+      - python3 --version
+      - echo check if pip3 is installed...
+      - pip3 --version
+  build:
+    commands:
+      - echo "[+] Installing CFN-LINT...."
+      - pip3 install cfn-lint
+      - echo "check if cfn-lint is installed..."
+      - cfn-lint --version
+      - echo "validating the template..."
+      - cfn-lint ec2_webinstance.yaml
+      - echo cfn-lint Build started on `date`...
+      - aws cloudformation package --template-file ec2_webinstance.yaml --s3-bucket my-deployed-artifactss --output-template-file packaged.yaml
+  post_build:
+    commands:
+      - echo "TOYE packaging completed on `date`"
+
+artifacts:
+  files:
+    - packaged.yaml
+    - ec2_webinstance.yaml
+  discard-paths: yes
+
+cache:
+  paths:
+    - '/root/.cache/pip'
